@@ -1,5 +1,5 @@
 {
-  "domain": "extel_gate",
+  "domain": "extel_umii",
   "name": "Extel Portail",
   "codeowners": ["@jasonpretavoine"],
   "config_flow": true,

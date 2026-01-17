@@ -1,28 +1,27 @@
 import aiohttp
 import logging
+from .const import DEFAULT_HEADERS
 
 _LOGGER = logging.getLogger(__name__)
 
 class ExtelUmiiAPI:
-    def __init__(self, email, password):
+    def __init__(self, email, password, device_id):
         self.email = email
         self.password = password
+        self.device_id = device_id
         self.token = None
         self.base_url = "https://umii.avidsen.one/services"
 
     async def login(self):
-        """Authentification Umii (Login)."""
-        url = f"{self.base_url}/login" # Adapté de tes captures
+        url = f"{self.base_url}/dain/login"
         payload = {
             "login": self.email,
             "password": self.password,
             "stayConnected": "on",
-            "deviceID": "99420B8A-38D2-4FF2-8B70-08A3", # ID vu dans ton image
+            "deviceID": self.device_id,
             "deviceOS": "IOS",
-            "deviceType": "iPhone13,4",
-            "deviceToken": "cxWJvPWm..." # À compléter si besoin
+            "deviceType": "iPhone13,4"
         }
-        
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, headers=DEFAULT_HEADERS) as resp:
                 if resp.status == 200:
@@ -31,27 +30,45 @@ class ExtelUmiiAPI:
                     return True
                 return False
 
+    async def get_gates(self):
+        url = f"{self.base_url}/durin/my/objects"
+        headers = {**DEFAULT_HEADERS, "Authorization": f"Bearer {self.token}"}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    content = data.get("content", [])
+                    gates = {}
+                    for item in content:
+                        res = item.get("resource", {})
+                        if res.get("className") == "BoardGate":
+                            gid = res.get("id")
+                            name = res.get("name") or "Portail Jardin"
+                            gates[str(gid)] = name
+                    return gates
+                return {}
+
     async def send_command(self, gate_id, action):
-        """Envoie une commande (OPEN, CLOSE, STOP, HALF-OPEN)."""
-        url = f"{self.base_url}/devices/{gate_id}/action"
+        """Envoie OPEN, CLOSE, STOP ou HALF-OPEN via PUT."""
+        if not self.token: await self.login()
+        # URL corrigée selon ton YAML
+        url = f"{self.base_url}/durin/my/objects/{gate_id}"
         headers = {**DEFAULT_HEADERS, "Authorization": f"Bearer {self.token}"}
         payload = {"actions": [{"name": action}]}
 
         async with aiohttp.ClientSession() as session:
             async with session.put(url, json=payload, headers=headers) as resp:
-                return resp.status == 200
+                return resp.status in [200, 204]
 
     async def get_status(self, gate_id):
-        """Récupère l'état (Open/Closed)."""
-        url = f"{self.base_url}/devices/{gate_id}/status"
+        url = f"{self.base_url}/durin/my/objects/{gate_id}"
         headers = {**DEFAULT_HEADERS, "Authorization": f"Bearer {self.token}"}
-        
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    # Logique de ton template YAML pour extraire le statut
-                    statuses = data.get("resource", {}).get("statuses", [])
+                    res = data.get("resource", {})
+                    statuses = res.get("statuses", [])
                     for s in statuses:
                         if s.get("name") == "status":
                             return s.get("value")
