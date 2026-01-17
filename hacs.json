@@ -1,0 +1,7 @@
+{
+  "name": "Extel Umii Portail",
+  "content_type": "integration",
+  "domains": ["extel_umii"],
+  "iot_class": "cloud_polling",
+  "render_readme": true
+}
