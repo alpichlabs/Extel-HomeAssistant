@@ -41,7 +41,7 @@ class ExtelUmiiAPI:
                     gates = {}
                     for item in content:
                         res = item.get("resource", {})
-                        if res.get("className") == "BoardGate":
+                        if res.get("className") in ("BoardGate", "Gate"):
                             gid = res.get("id")
                             name = res.get("name") or "Portail Jardin"
                             gates[str(gid)] = name
