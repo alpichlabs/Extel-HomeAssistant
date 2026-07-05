@@ -79,6 +79,7 @@ class ExtelGateCover(CoverEntity):
         self._last_command_success = success
         if success:
             self._state = "opening"
+            self._position = None
         self.async_write_ha_state()
 
     async def async_close_cover(self, **kwargs):
@@ -88,6 +89,7 @@ class ExtelGateCover(CoverEntity):
         self._last_command_success = success
         if success:
             self._state = "closing"
+            self._position = None
         self.async_write_ha_state()
 
     async def async_stop_cover(self, **kwargs):
@@ -114,6 +116,7 @@ class ExtelGateCover(CoverEntity):
             return
         if raw_status in ("opening", "closing"):
             self._state = raw_status
+            self._position = None
             return
 
         middle_match = MIDDLE_STATUS_PATTERN.match(raw_status or "")
@@ -123,3 +126,4 @@ class ExtelGateCover(CoverEntity):
             return
 
         self._state = "unknown"
+        self._position = None
