@@ -42,6 +42,14 @@ class ExtelGateCover(CoordinatorEntity, CoverEntity):
         return f"extel_{self._gate_id}"
 
     @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, self._gate_id)},
+            "manufacturer": "Extel",
+            "name": self._name,
+        }
+
+    @property
     def device_class(self):
         return CoverDeviceClass.GATE
 
