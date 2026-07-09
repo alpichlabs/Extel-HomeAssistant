@@ -15,21 +15,21 @@ async def async_setup_entry(hass, entry, async_add_entities):
     gate_id = entry.data["gate_id"]
     async_add_entities(
         [
-            ExtelGateConnectivitySensor(coordinator, gate_id),
-            ExtelGateProblemSensor(coordinator, gate_id),
+            ExtelGatePresentSensor(coordinator, gate_id),
+            ExtelGateBoardErrorSensor(coordinator, gate_id),
         ]
     )
 
 
-class ExtelGateConnectivitySensor(CoordinatorEntity, BinarySensorEntity):
+class ExtelGatePresentSensor(CoordinatorEntity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_name = "Garden Gate Connectivity"
+    _attr_name = "Present"
 
     def __init__(self, coordinator, gate_id):
         super().__init__(coordinator)
         self._gate_id = gate_id
-        self._attr_unique_id = f"extel_{gate_id}_connectivity"
+        self._attr_unique_id = f"extel_{gate_id}_present"
 
     @property
     def is_on(self):
@@ -39,15 +39,15 @@ class ExtelGateConnectivitySensor(CoordinatorEntity, BinarySensorEntity):
         return str(present) == "1"
 
 
-class ExtelGateProblemSensor(CoordinatorEntity, BinarySensorEntity):
+class ExtelGateBoardErrorSensor(CoordinatorEntity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_name = "Garden Gate Problem"
+    _attr_name = "Board Error"
 
     def __init__(self, coordinator, gate_id):
         super().__init__(coordinator)
         self._gate_id = gate_id
-        self._attr_unique_id = f"extel_{gate_id}_problem"
+        self._attr_unique_id = f"extel_{gate_id}_board_error"
 
     @property
     def is_on(self):
