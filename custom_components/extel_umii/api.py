@@ -35,7 +35,7 @@ class ExtelUmiiAPI:
                 return False
 
     async def get_gates(self):
-        url = f"{self.base_url}/durin/my/objects"
+        url = f"{self.base_url}/durin/my/objects?all=true"
         headers = {**DEFAULT_HEADERS, "Authorization": f"Bearer {self.token}"}
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as resp:
