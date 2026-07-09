@@ -5,21 +5,24 @@ from homeassistant.components.cover import (
     CoverDeviceClass,
     CoverEntityFeature,
 )
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
+from .coordinator import get_status_value
 
 MIDDLE_STATUS_PATTERN = re.compile(r"^middle_(\d{1,3})$")
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Configuration des entités cover à partir d'une entrée de configuration."""
-    api = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([ExtelGateCover(api, entry.data["gate_id"], entry.title)])
+    data = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([ExtelGateCover(data["api"], data["coordinator"], entry.data["gate_id"], entry.title)])
 
 
-class ExtelGateCover(CoverEntity):
+class ExtelGateCover(CoordinatorEntity, CoverEntity):
     """Représentation du portail Extel."""
 
-    def __init__(self, api, gate_id, name):
+    def __init__(self, api, coordinator, gate_id, name):
+        super().__init__(coordinator)
         self._api = api
         self._gate_id = gate_id
         self._name = name
@@ -28,6 +31,7 @@ class ExtelGateCover(CoverEntity):
         self._last_raw_status = None
         self._last_command = None
         self._last_command_success = None
+        self._apply_status(self._raw_status_from_coordinator())
 
     @property
     def name(self):
@@ -101,8 +105,15 @@ class ExtelGateCover(CoverEntity):
 
     async def async_update(self):
         """Récupère l'état réel depuis l'API."""
-        raw_status = await self._api.get_status(self._gate_id)
-        self._apply_status(raw_status)
+        await self.coordinator.async_request_refresh()
+
+    def _handle_coordinator_update(self):
+        self._apply_status(self._raw_status_from_coordinator())
+        self.async_write_ha_state()
+
+    def _raw_status_from_coordinator(self):
+        raw_status = str(get_status_value(self.coordinator.data or {}, "status", "unknown")).strip().lower()
+        return raw_status
 
     def _apply_status(self, raw_status):
         self._last_raw_status = raw_status

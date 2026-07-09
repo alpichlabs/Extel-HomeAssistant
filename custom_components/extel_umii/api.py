@@ -77,7 +77,7 @@ class ExtelUmiiAPI:
                     )
                     return False
 
-    async def get_status(self, gate_id):
+    async def get_gate_resource(self, gate_id):
         url = f"{self.base_url}/durin/my/objects/{gate_id}"
         async with aiohttp.ClientSession() as session:
             for attempt in range(2):
@@ -87,17 +87,24 @@ class ExtelUmiiAPI:
                         continue
                     if resp.status == 200:
                         data = await resp.json()
-                        res = data.get("resource", {})
-                        statuses = res.get("statuses", [])
-                        for status in statuses:
-                            if status.get("name") == "status":
-                                raw_status = str(status.get("value", "unknown")).strip().lower()
-                                _LOGGER.debug("Extel raw status for gate %s: %s", gate_id, raw_status)
-                                if raw_status in VALID_GATE_STATES or raw_status.startswith("middle_"):
-                                    return raw_status
-                                _LOGGER.warning("Unknown Extel status for gate %s: %s", gate_id, raw_status)
-                                return "unknown"
-                        _LOGGER.warning("Extel status missing for gate %s", gate_id)
-                        return "unknown"
+                        return data.get("resource", {})
                     _LOGGER.warning("Extel status fetch for gate %s failed with HTTP status %s", gate_id, resp.status)
-                    return "unknown"
+                    return None
+
+    async def get_status(self, gate_id):
+        res = await self.get_gate_resource(gate_id)
+        if not res:
+            return "unknown"
+
+        statuses = res.get("statuses", [])
+        for status in statuses:
+            if status.get("name") == "status":
+                raw_status = str(status.get("value", "unknown")).strip().lower()
+                _LOGGER.debug("Extel raw status for gate %s: %s", gate_id, raw_status)
+                if raw_status in VALID_GATE_STATES or raw_status.startswith("middle_"):
+                    return raw_status
+                _LOGGER.warning("Unknown Extel status for gate %s: %s", gate_id, raw_status)
+                return "unknown"
+
+        _LOGGER.warning("Extel status missing for gate %s", gate_id)
+        return "unknown"

@@ -2,7 +2,7 @@ from homeassistant.components.button import ButtonEntity
 from .const import DOMAIN
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    api = hass.data[DOMAIN][entry.entry_id]
+    api = hass.data[DOMAIN][entry.entry_id]["api"]
     async_add_entities([ExtelPedestrianButton(api, entry.data["gate_id"])])
 
 class ExtelPedestrianButton(ButtonEntity):
